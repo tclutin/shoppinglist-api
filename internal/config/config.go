@@ -1,33 +1,52 @@
 package config
 
-import "time"
+import (
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
+	"log"
+	"time"
+)
+
+const (
+	dev  string = "dev"
+	prod string = "prod"
+)
 
 type Config struct {
+	Env        string `env:"env"`
 	HTTPServer HTTPServer
 	Postgres   Postgres
 	JWT        JWT
 }
 
 type HTTPServer struct {
-	Host string
-	Port string
+	Host string `env:"HTTP_HOST"`
+	Port string `env:"HTTP_PORT"`
 }
 
 type Postgres struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Database string
+	Host     string `env:"POSTGRES_HOST"`
+	Port     string `env:"POSTGRES_PORT"`
+	User     string `env:"POSTGRES_USER"`
+	Password string `env:"POSTGRES_PASSWORD"`
+	Database string `env:"POSTGRES_DATABASE"`
 }
 
 type JWT struct {
-	Secret string
-	Expire time.Duration
+	Secret string        `env:"JWT_SECRET"`
+	Expire time.Duration `env:"JWT_EXPIRE"`
 }
 
 func MustLoad() *Config {
 	var config Config
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalln("Error loading .env file", err)
+	}
+
+	if err := cleanenv.ReadEnv(&config); err != nil {
+		log.Fatalln("Error reading env", err)
+	}
 
 	return &config
 }

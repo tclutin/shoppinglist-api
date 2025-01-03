@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"time"
@@ -14,7 +15,7 @@ const (
 type Client interface {
 }
 
-func NewPool(ctx context.Context, dsn string) *pgxpool.Pool {
+func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	for i := 0; i < maxRetries; i++ {
 		pool, err := pgxpool.New(ctx, dsn)
 		if err != nil {
@@ -23,14 +24,8 @@ func NewPool(ctx context.Context, dsn string) *pgxpool.Pool {
 			continue
 		}
 
-		if err = pool.Ping(ctx); err != nil {
-			slog.Error("failed to ping to the database", "retry_count", i+1, "error", err)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-
-		return pool
+		return pool, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("failed to connect to the database after %d retries", maxRetries)
 }

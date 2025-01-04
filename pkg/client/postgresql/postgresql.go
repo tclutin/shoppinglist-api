@@ -15,7 +15,7 @@ const (
 type Client interface {
 }
 
-func Pool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	for i := 0; i < maxRetries; i++ {
 		pool, err := pgxpool.New(ctx, dsn)
 		if err != nil {

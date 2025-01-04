@@ -58,8 +58,7 @@ func (t *TokenManager) ParseToken(jwtToken string) (uint64, error) {
 		return 0, errors.New("sub claim missing")
 	}
 
-	// TODO: float64
-	subFloat, ok := sub.(uint64)
+	subFloat, ok := sub.(float64)
 	if !ok {
 		return 0, errors.New("invalid sub format, expected float64 or string")
 	}

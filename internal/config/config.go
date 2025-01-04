@@ -50,3 +50,11 @@ func MustLoad() *Config {
 
 	return &config
 }
+
+func (c Config) IsProd() bool {
+	return c.Env == prod
+}
+
+func (c Config) IsDev() bool {
+	return c.Env == dev
+}

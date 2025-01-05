@@ -3,13 +3,15 @@ package manager
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"log"
 	"time"
 )
 
 type Manager interface {
-	NewToken(userID uint64, ttl time.Duration) (string, error)
 	ParseToken(accessToken string) (uint64, error)
+	NewAccessToken(userID uint64, ttl time.Duration) (string, error)
+	NewRefreshToken() uuid.UUID
 }
 
 type TokenManager struct {
@@ -24,7 +26,7 @@ func MustLoadTokenManager(signingKey string) *TokenManager {
 	return &TokenManager{signingKey: signingKey}
 }
 
-func (t *TokenManager) NewToken(userID uint64, ttl time.Duration) (string, error) {
+func (t *TokenManager) NewAccessToken(userID uint64, ttl time.Duration) (string, error) {
 	payload := jwt.MapClaims{
 		"exp": time.Now().Add(ttl).Unix(),
 		"sub": userID,
@@ -33,6 +35,10 @@ func (t *TokenManager) NewToken(userID uint64, ttl time.Duration) (string, error
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 
 	return token.SignedString([]byte(t.signingKey))
+}
+
+func (t *TokenManager) NewRefreshToken() uuid.UUID {
+	return uuid.New()
 }
 
 func (t *TokenManager) ParseToken(jwtToken string) (uint64, error) {

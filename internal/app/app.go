@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tclutin/shoppinglist-api/internal/config"
+	"github.com/tclutin/shoppinglist-api/internal/domain"
+	"github.com/tclutin/shoppinglist-api/internal/handler"
+	"github.com/tclutin/shoppinglist-api/internal/repository"
 	"github.com/tclutin/shoppinglist-api/pkg/client/postgresql"
+	"github.com/tclutin/shoppinglist-api/pkg/jwt/manager"
 	"github.com/tclutin/shoppinglist-api/pkg/logger"
-	"log"
 	"log/slog"
 	"net"
 	"net/http"
@@ -37,15 +40,22 @@ func New() *App {
 		cfg.Postgres.Port,
 		cfg.Postgres.Database)
 
-	pool, err := postgresql.NewPool(context.Background(), dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println(dsn)
+
+	pool := postgresql.NewPool(context.Background(), dsn)
+
+	tokenManager := manager.MustLoadTokenManager(cfg.JWT.Secret)
+
+	repos := repository.NewRepositories(pool)
+
+	services := domain.NewServices(customLogger, cfg, tokenManager, repos)
+
+	router := handler.NewRouter(cfg, customLogger, services)
 
 	return &App{
 		httpServer: &http.Server{
 			Addr:           net.JoinHostPort(cfg.HTTPServer.Host, cfg.HTTPServer.Port),
-			Handler:        nil,
+			Handler:        router,
 			MaxHeaderBytes: 1 << 20,
 			WriteTimeout:   5 * time.Second,
 			ReadTimeout:    5 * time.Second,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 	"log/slog"
 	"time"
 )
@@ -15,7 +16,7 @@ const (
 type Client interface {
 }
 
-func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+func NewPool(ctx context.Context, dsn string) *pgxpool.Pool {
 	for i := 0; i < maxRetries; i++ {
 		pool, err := pgxpool.New(ctx, dsn)
 		if err != nil {
@@ -31,8 +32,9 @@ func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 			continue
 		}
 
-		return pool, nil
+		return pool
 	}
 
-	return nil, fmt.Errorf("failed to connect to the database after %d retries", maxRetries)
+	log.Fatalln(fmt.Errorf("failed to connect to the database after %d retries", maxRetries))
+	return nil
 }

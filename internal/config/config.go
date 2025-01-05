@@ -33,8 +33,9 @@ type Postgres struct {
 }
 
 type JWT struct {
-	Secret string        `env:"JWT_SECRET"`
-	Expire time.Duration `env:"JWT_EXPIRE"`
+	Secret        string        `env:"JWT_SECRET"`
+	AccessExpire  time.Duration `env:"JWT_ACCESS_EXPIRE"`
+	RefreshExpire time.Duration `env:"JWT_REFRESH_EXPIRE"`
 }
 
 func MustLoad() *Config {

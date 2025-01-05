@@ -5,28 +5,18 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/tclutin/shoppinglist-api/internal/config"
+	"github.com/tclutin/shoppinglist-api/internal/domain"
+	"github.com/tclutin/shoppinglist-api/internal/handler/auth"
 	"log/slog"
 	"net/http"
 )
 
-type Handler struct {
-	logger *slog.Logger
-	cfg    *config.Config
-}
-
-func New(logger *slog.Logger, cfg *config.Config) *Handler {
-	return &Handler{
-		logger: logger.With("handler", "handler"),
-		cfg:    cfg,
-	}
-}
-
-func (h *Handler) InitRoutes() *gin.Engine {
-	if h.cfg.IsProd() {
+func NewRouter(cfg *config.Config, logger *slog.Logger, services *domain.Services) *gin.Engine {
+	if cfg.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if h.cfg.IsDev() {
+	if cfg.IsDev() {
 		gin.SetMode(gin.DebugMode)
 	}
 
@@ -40,7 +30,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	root := router.Group("/api")
 	{
-		NewAuthHandler(h.logger, nil).Init(root)
+		auth.NewAuthHandler(logger, services.Auth).Init(root, services.Auth)
 	}
 
 	return router

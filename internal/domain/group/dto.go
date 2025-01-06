@@ -11,7 +11,7 @@ type JoinToGroupDTO struct {
 	Code   string
 }
 
-type DeleteGroupDTO struct {
+type GroupUserDTO struct {
 	GroupID uint64
 	UserID  uint64
 }

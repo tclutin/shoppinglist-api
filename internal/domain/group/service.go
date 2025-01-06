@@ -74,7 +74,7 @@ func (s *Service) CreateGroup(ctx context.Context, dto CreateGroupDTO) (uint64, 
 	return groupID, nil
 }
 
-func (s *Service) DeleteGroup(ctx context.Context, dto DeleteGroupDTO) error {
+func (s *Service) DeleteGroup(ctx context.Context, dto GroupUserDTO) error {
 	group, err := s.repo.GetById(ctx, dto.GroupID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -124,6 +124,28 @@ func (s *Service) JoinToGroup(ctx context.Context, dto JoinToGroupDTO) error {
 	}
 
 	return domainErr.ErrAlreadyMember
+}
+
+func (s *Service) LeaveFromGroup(ctx context.Context, dto GroupUserDTO) error {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrGroupNotFound
+		}
+	}
+
+	membr, err := s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrMemberNotFound
+		}
+	}
+
+	if membr.Role == "owner" {
+		return domainErr.ErrOwnerCannotLeave
+	}
+
+	return s.memberRepo.Delete(ctx, membr.MemberID)
 }
 
 func (s *Service) GenCode(size int64) (string, error) {

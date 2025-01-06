@@ -11,9 +11,10 @@ var (
 
 	ErrUserNotFound = errors.New("user not found")
 
-	ErrInvalidCode    = errors.New("invalid code")
-	ErrAlreadyMember  = errors.New("already a member")
-	ErrGroupNotFound  = errors.New("group not found")
-	ErrMemberNotFound = errors.New("member not found")
-	ErrAreNotOwner    = errors.New("you aren't owner")
+	ErrInvalidCode      = errors.New("invalid code")
+	ErrAlreadyMember    = errors.New("already a member")
+	ErrGroupNotFound    = errors.New("group not found")
+	ErrMemberNotFound   = errors.New("member not found")
+	ErrAreNotOwner      = errors.New("you aren't owner")
+	ErrOwnerCannotLeave = errors.New("owner cannot leave")
 )

@@ -16,8 +16,9 @@ import (
 
 type Service interface {
 	CreateGroup(ctx context.Context, dto group.CreateGroupDTO) (uint64, error)
-	DeleteGroup(ctx context.Context, dto group.DeleteGroupDTO) error
+	DeleteGroup(ctx context.Context, dto group.GroupUserDTO) error
 	JoinToGroup(ctx context.Context, dto group.JoinToGroupDTO) error
+	LeaveFromGroup(ctx context.Context, dto group.GroupUserDTO) error
 }
 
 type Handler struct {
@@ -32,16 +33,16 @@ func NewGroupHandler(logger *slog.Logger, service Service) *Handler {
 	}
 }
 
-func (a *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
+func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 	groupsRouter := router.Group("groups")
 	{
-		groupsRouter.POST("", mw.AuthMiddleware(authService), a.Create)
-		groupsRouter.POST("/join", mw.AuthMiddleware(authService), a.JoinToGroup)
+		groupsRouter.POST("", mw.AuthMiddleware(authService), h.Create)
+		groupsRouter.POST("/join", mw.AuthMiddleware(authService), h.JoinToGroup)
+		groupsRouter.DELETE("/:group_id", mw.AuthMiddleware(authService), h.Delete)
 
-		groupsRouter.DELETE("/:group_id", mw.AuthMiddleware(authService), a.Delete)
+		groupsRouter.DELETE("/:group_id/leave", mw.AuthMiddleware(authService), h.LeaveFromGroup)
 
 		groupsRouter.GET("/:group_id", mw.AuthMiddleware(authService), nil)
-		groupsRouter.POST("/:group_id/leave", mw.AuthMiddleware(authService), nil)
 		groupsRouter.GET("/:group_id/members", mw.AuthMiddleware(authService), nil)
 		groupsRouter.DELETE("/:group_id/members/:member_id", mw.AuthMiddleware(authService), nil)
 	}
@@ -165,7 +166,7 @@ func (h *Handler) JoinToGroup(c *gin.Context) {
 // @Failure		401		{object}	response.APIError
 // @Failure		422		{object}	response.APIError
 // @Failure		404		{object}	response.APIError
-// @Failure		400		{object}	response.APIError
+// @Failure		403		{object}	response.APIError
 // @Failure		500		{object}	response.APIError
 // @Router			/groups/{group_id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
@@ -185,7 +186,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.service.DeleteGroup(c.Request.Context(), group.DeleteGroupDTO{
+	err = h.service.DeleteGroup(c.Request.Context(), group.GroupUserDTO{
 		GroupID: groupID,
 		UserID:  userID.(uint64),
 	})
@@ -204,10 +205,75 @@ func (h *Handler) Delete(c *gin.Context) {
 		}
 
 		if errors.Is(err, domainErr.ErrAreNotOwner) {
-			c.AbortWithStatusJSON(http.StatusBadRequest,
-				response.NewAPIError(http.StatusBadRequest, err.Error(), nil))
+			c.AbortWithStatusJSON(http.StatusForbidden,
+				response.NewAPIError(http.StatusForbidden, err.Error(), nil))
 			return
 		}
+
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.APIResponse{Message: "success"})
+}
+
+// @Security		ApiKeyAuth
+// @Summary		LeaveFromGroup
+// @Description	leave from you group
+// @Tags			groups
+// @Accept			json
+// @Produce		json
+// @Param			group_id	path		string	true	"Group ID"
+// @Success		200		{object}	response.APIResponse
+// @Failure		401		{object}	response.APIError
+// @Failure		422		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		403		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/groups/{group_id}/leave [delete]
+func (h *Handler) LeaveFromGroup(c *gin.Context) {
+	userID, ok := c.Get("userID")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			response.NewAPIError(http.StatusUnauthorized, domainErr.ErrMissingCredentials.Error(), nil))
+		return
+	}
+
+	groupID, err := strconv.ParseUint(c.Param("group_id"), 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, "not correct path", nil))
+		return
+	}
+
+	err = h.service.LeaveFromGroup(c.Request.Context(), group.GroupUserDTO{
+		GroupID: groupID,
+		UserID:  userID.(uint64),
+	})
+
+	if err != nil {
+		if errors.Is(err, domainErr.ErrGroupNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrMemberNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrOwnerCannotLeave) {
+			c.AbortWithStatusJSON(http.StatusForbidden,
+				response.NewAPIError(http.StatusForbidden, err.Error(), nil))
+			return
+		}
+
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))

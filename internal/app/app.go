@@ -40,8 +40,6 @@ func New() *App {
 		cfg.Postgres.Port,
 		cfg.Postgres.Database)
 
-	fmt.Println(dsn)
-
 	pool := postgresql.NewPool(context.Background(), dsn)
 
 	tokenManager := manager.MustLoadTokenManager(cfg.JWT.Secret)

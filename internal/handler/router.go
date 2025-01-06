@@ -4,9 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/tclutin/shoppinglist-api/docs"
 	"github.com/tclutin/shoppinglist-api/internal/config"
 	"github.com/tclutin/shoppinglist-api/internal/domain"
 	"github.com/tclutin/shoppinglist-api/internal/handler/auth"
+	"github.com/tclutin/shoppinglist-api/internal/handler/group"
+	"github.com/tclutin/shoppinglist-api/internal/handler/middleware"
 	"log/slog"
 	"net/http"
 )
@@ -22,6 +25,8 @@ func NewRouter(cfg *config.Config, logger *slog.Logger, services *domain.Service
 
 	router := gin.Default()
 
+	router.Use(middleware.CORSMiddleware())
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.GET("/health", func(c *gin.Context) {
@@ -31,6 +36,7 @@ func NewRouter(cfg *config.Config, logger *slog.Logger, services *domain.Service
 	root := router.Group("/api")
 	{
 		auth.NewAuthHandler(logger, services.Auth).Init(root, services.Auth)
+		group.NewGroupHandler(logger, services.Group).Init(root, services.Auth)
 	}
 
 	return router

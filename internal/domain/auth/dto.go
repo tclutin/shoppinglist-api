@@ -19,5 +19,5 @@ type TokenDTO struct {
 }
 
 type RefreshTokenDTO struct {
-	RefreshToken uuid.UUID `json:"refresh_token"`
+	RefreshToken uuid.UUID
 }

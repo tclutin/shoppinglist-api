@@ -1,18 +1,22 @@
 package response
 
-type APIError[T any] struct {
-	Error Error[T] `json:"error"`
+type APIResponse struct {
+	Message string `json:"message"`
 }
 
-type Error[T any] struct {
+type APIError struct {
+	Error Error `json:"error"`
+}
+
+type Error struct {
 	StatusCode uint   `json:"status_code"`
 	Message    string `json:"message"`
-	Body       *T     `json:"body,omitempty"`
+	Body       any    `json:"body,omitempty"`
 }
 
-func NewAPIError[T any](statusCode uint, message string, body *T) APIError[T] {
-	return APIError[T]{
-		Error: Error[T]{
+func NewAPIError(statusCode uint, message string, body any) APIError {
+	return APIError{
+		Error: Error{
 			StatusCode: statusCode,
 			Message:    message,
 			Body:       body,

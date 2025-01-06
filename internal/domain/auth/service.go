@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tclutin/shoppinglist-api/internal/config"
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
@@ -129,7 +131,9 @@ func (s *Service) SignUp(ctx context.Context, dto SignUpDTO) (TokenDTO, error) {
 func (s *Service) Refresh(ctx context.Context, dto RefreshTokenDTO) (TokenDTO, error) {
 	session, err := s.repo.GetSessionByRefreshToken(ctx, dto.RefreshToken)
 	if err != nil {
-		return TokenDTO{}, domainErr.ErrSessionNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return TokenDTO{}, domainErr.ErrSessionNotFound
+		}
 	}
 
 	if time.Now().UTC().After(session.ExpiresAt) {
@@ -145,7 +149,7 @@ func (s *Service) Refresh(ctx context.Context, dto RefreshTokenDTO) (TokenDTO, e
 
 	session.RefreshToken = refreshToken
 	session.ExpiresAt = time.Now().UTC().Add(s.cfg.JWT.RefreshExpire)
-	session.CreatedAt = time.Now()
+	session.CreatedAt = time.Now().UTC()
 
 	if err = s.repo.DeleteSession(ctx, session.SessionID); err != nil {
 		return TokenDTO{}, err

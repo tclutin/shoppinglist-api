@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/tclutin/shoppinglist-api/internal/domain/auth"
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
@@ -42,53 +43,24 @@ func (a *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 	}
 }
 
-func (a *Handler) LogIn(c *gin.Context) {
-	var request LogInRequest
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusUnprocessableEntity,
-			response.NewAPIError[string](http.StatusUnprocessableEntity, err.Error(), nil))
-		return
-	}
-
-	tokens, err := a.service.LogIn(c.Request.Context(), auth.LogInDTO{
-		Username: request.Username,
-		Password: request.Password,
-	})
-
-	if err != nil {
-		if errors.Is(err, domainErr.ErrUserNotFound) {
-			c.AbortWithStatusJSON(http.StatusNotFound,
-				response.NewAPIError[string](http.StatusNotFound, err.Error(), nil))
-			return
-		}
-
-		if errors.Is(err, domainErr.ErrUserNotValid) {
-			c.AbortWithStatusJSON(http.StatusBadRequest,
-				response.NewAPIError[string](http.StatusBadRequest, err.Error(), nil))
-			return
-		}
-
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			response.NewAPIError[string](http.StatusInternalServerError, "Internal server error", nil))
-		return
-	}
-
-	c.JSON(http.StatusOK, TokenResponse{
-		AccessToken:  tokens.AccessToken,
-		RefreshToken: tokens.RefreshToken,
-	})
-}
-
+// @Summary		SignUp
+// @Description	Create new user
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			input	body		SignUpRequest	true	"Create new user"
+// @Success		201		{object}	TokenResponse
+// @Failure		422		{object}	response.APIError
+// @Failure		409		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/auth/signup [post]
 func (a *Handler) SignUp(c *gin.Context) {
 	var request SignUpRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusUnprocessableEntity,
-			response.NewAPIError[string](http.StatusUnprocessableEntity, err.Error(), nil))
+			response.NewAPIError(http.StatusUnprocessableEntity, err.Error(), nil))
 		return
 	}
 
@@ -102,13 +74,13 @@ func (a *Handler) SignUp(c *gin.Context) {
 		if errors.Is(err, domainErr.ErrUserAlreadyExists) {
 			c.AbortWithStatusJSON(
 				http.StatusConflict,
-				response.NewAPIError[string](http.StatusConflict, err.Error(), nil))
+				response.NewAPIError(http.StatusConflict, err.Error(), nil))
 			return
 		}
 
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
-			response.NewAPIError[string](http.StatusInternalServerError, "Internal server error", nil))
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
 		return
 	}
 
@@ -118,11 +90,134 @@ func (a *Handler) SignUp(c *gin.Context) {
 	})
 }
 
+// @Summary		LogIn
+// @Description	Log in your account
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			input	body		LogInRequest	true	"Log in your account"
+// @Success		200		{object}	TokenResponse
+// @Failure		422		{object}	response.APIError
+// @Failure		400		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/auth/login [post]
+func (a *Handler) LogIn(c *gin.Context) {
+	var request LogInRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, err.Error(), nil))
+		return
+	}
+
+	tokens, err := a.service.LogIn(c.Request.Context(), auth.LogInDTO{
+		Username: request.Username,
+		Password: request.Password,
+	})
+
+	if err != nil {
+		if errors.Is(err, domainErr.ErrUserNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrUserNotValid) {
+			c.AbortWithStatusJSON(http.StatusBadRequest,
+				response.NewAPIError(http.StatusBadRequest, err.Error(), nil))
+			return
+		}
+
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, TokenResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+	})
+}
+
+// @Summary		Refresh
+// @Description	Refresh your token
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			input	body		RefreshTokenRequest	true	"Refresh your token"
+// @Success		200		{object}	TokenResponse
+// @Failure		422		{object}	response.APIError
+// @Failure		400		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/auth/refresh [post]
+func (a *Handler) Refresh(c *gin.Context) {
+	var request RefreshTokenRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, err.Error(), nil))
+		return
+	}
+
+	uuid, err := uuid.Parse(request.RefreshToken)
+	if err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusBadRequest,
+			response.NewAPIError(http.StatusBadRequest, "failed to parse refresh token", nil))
+		return
+	}
+
+	tokens, err := a.service.Refresh(c.Request.Context(), auth.RefreshTokenDTO{
+		RefreshToken: uuid,
+	})
+
+	if err != nil {
+		if errors.Is(err, domainErr.ErrSessionNotFound) {
+			c.AbortWithStatusJSON(
+				http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrRefreshTokenExpired) {
+			c.AbortWithStatusJSON(
+				http.StatusBadRequest,
+				response.NewAPIError(http.StatusBadRequest, err.Error(), nil))
+			return
+		}
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, TokenResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+	})
+}
+
+// @Security		ApiKeyAuth
+// @Summary		Who
+// @Description	Get current user
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Success		200		{object}	CurrentUserResponse
+// @Failure		401		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/auth/who [get]
 func (a *Handler) Who(c *gin.Context) {
 	userID, ok := c.Get("userID")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized,
-			response.NewAPIError[string](http.StatusUnauthorized, domainErr.ErrMissingCredentials.Error(), nil))
+			response.NewAPIError(http.StatusUnauthorized, domainErr.ErrMissingCredentials.Error(), nil))
 		return
 	}
 
@@ -130,13 +225,13 @@ func (a *Handler) Who(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, domainErr.ErrUserNotFound) {
 			c.AbortWithStatusJSON(http.StatusNotFound,
-				response.NewAPIError[string](http.StatusNotFound, err.Error(), nil))
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
 			return
 		}
 
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
-			response.NewAPIError[string](http.StatusInternalServerError, "Internal server error", nil))
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
 		return
 	}
 
@@ -146,8 +241,4 @@ func (a *Handler) Who(c *gin.Context) {
 		Gender:    usr.Gender,
 		CreatedAt: usr.CreatedAt,
 	})
-}
-
-func (a *Handler) Refresh(c *gin.Context) {
-
 }

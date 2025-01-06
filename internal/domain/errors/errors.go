@@ -10,4 +10,10 @@ var (
 	ErrRefreshTokenExpired = errors.New("refresh token expired")
 
 	ErrUserNotFound = errors.New("user not found")
+
+	ErrInvalidCode    = errors.New("invalid code")
+	ErrAlreadyMember  = errors.New("already a member")
+	ErrGroupNotFound  = errors.New("group not found")
+	ErrMemberNotFound = errors.New("member not found")
+	ErrAreNotOwner    = errors.New("you aren't owner")
 )

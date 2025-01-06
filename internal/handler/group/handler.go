@@ -34,13 +34,12 @@ func NewGroupHandler(logger *slog.Logger, service Service) *Handler {
 }
 
 func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
-	groupsRouter := router.Group("groups")
+	groupsRouter := router.Group("groups", mw.AuthMiddleware(authService))
 	{
-		groupsRouter.POST("", mw.AuthMiddleware(authService), h.Create)
-		groupsRouter.POST("/join", mw.AuthMiddleware(authService), h.JoinToGroup)
-		groupsRouter.DELETE("/:group_id", mw.AuthMiddleware(authService), h.Delete)
-
-		groupsRouter.DELETE("/:group_id/leave", mw.AuthMiddleware(authService), h.LeaveFromGroup)
+		groupsRouter.POST("", h.Create)
+		groupsRouter.POST("/join", h.JoinToGroup)
+		groupsRouter.DELETE("/:group_id", h.Delete)
+		groupsRouter.DELETE("/:group_id/leave", h.LeaveFromGroup)
 
 		groupsRouter.GET("/:group_id", mw.AuthMiddleware(authService), nil)
 		groupsRouter.GET("/:group_id/members", mw.AuthMiddleware(authService), nil)

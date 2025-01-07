@@ -78,6 +78,26 @@ func (m *MemberRepository) GetByUserAndGroupId(ctx context.Context, userID uint6
 	return member, nil
 }
 
+func (m *MemberRepository) GetByMemberAndGroupId(ctx context.Context, memberID uint64, groupID uint64) (member.Member, error) {
+	sql := `SELECT * FROM public.members WHERE member_id = $1 AND group_id = $2`
+
+	row := m.db.QueryRow(ctx, sql, memberID, groupID)
+
+	var member member.Member
+	err := row.Scan(
+		&member.MemberID,
+		&member.UserID,
+		&member.GroupID,
+		&member.Role,
+		&member.JoinedAt)
+
+	if err != nil {
+		return member, err
+	}
+
+	return member, nil
+}
+
 func (m *MemberRepository) GetMembersByGroupId(ctx context.Context, groupId uint64) ([]member.MemberDTO, error) {
 	sql := `SELECT m.member_id, u.username, u.gender, m.role FROM public.members as m
 			INNER JOIN public.users as u ON u.user_id = m.user_id

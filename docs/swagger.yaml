@@ -76,6 +76,13 @@ definitions:
       group_id:
         type: integer
     type: object
+  group.GroupUserDTO:
+    properties:
+      groupID:
+        type: integer
+      userID:
+        type: integer
+    type: object
   group.JoinToGroupRequest:
     properties:
       code:
@@ -330,7 +337,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: leave from you group
+      description: leave from your group
       parameters:
       - description: Group ID
         in: path
@@ -367,6 +374,101 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: LeaveFromGroup
+      tags:
+      - groups
+  /groups/{group_id}/members:
+    get:
+      consumes:
+      - application/json
+      description: get group members
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/group.GroupUserDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetGroupMembers
+      tags:
+      - groups
+  /groups/{group_id}/members/{member_id}:
+    delete:
+      consumes:
+      - application/json
+      description: kick a member
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: member_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: KickMember
       tags:
       - groups
   /groups/join:

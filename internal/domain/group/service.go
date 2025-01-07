@@ -16,13 +16,13 @@ type MemberRepository interface {
 	Delete(ctx context.Context, memberID uint64) error
 	GetByUserId(ctx context.Context, userID uint64) (member.Member, error)
 	GetByUserAndGroupId(ctx context.Context, userID uint64, groupID uint64) (member.Member, error)
+	GetByMemberAndGroupId(ctx context.Context, memberID uint64, groupID uint64) (member.Member, error)
 	GetMembersByGroupId(ctx context.Context, groupId uint64) ([]member.MemberDTO, error)
 }
 
 type Repository interface {
 	Create(ctx context.Context, group Group) (uint64, error)
 	Delete(ctx context.Context, groupID uint64) error
-
 	GetById(ctx context.Context, groupID uint64) (Group, error)
 	GetByCode(ctx context.Context, code string) (Group, error)
 }
@@ -143,6 +143,62 @@ func (s *Service) LeaveFromGroup(ctx context.Context, dto GroupUserDTO) error {
 
 	if membr.Role == "owner" {
 		return domainErr.ErrOwnerCannotLeave
+	}
+
+	return s.memberRepo.Delete(ctx, membr.MemberID)
+}
+
+func (s *Service) GetGroupMembers(ctx context.Context, dto GroupUserDTO) ([]member.MemberDTO, error) {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domainErr.ErrGroupNotFound
+		}
+	}
+
+	membr, err := s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domainErr.ErrMemberNotFound
+		}
+	}
+
+	members, err := s.memberRepo.GetMembersByGroupId(ctx, membr.GroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
+func (s *Service) KickMember(ctx context.Context, dto KickMemberDTO) error {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrGroupNotFound
+		}
+	}
+
+	owner, err := s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrMemberNotFound
+		}
+	}
+
+	membr, err := s.memberRepo.GetByMemberAndGroupId(ctx, dto.MemberID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrMemberNotFound
+		}
+	}
+
+	if owner.Role != "owner" {
+		return domainErr.ErrAreNotOwner
+	}
+
+	if owner.UserID == membr.UserID {
+		return domainErr.ErrCannotKickYourself
 	}
 
 	return s.memberRepo.Delete(ctx, membr.MemberID)

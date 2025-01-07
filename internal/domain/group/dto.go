@@ -15,3 +15,9 @@ type GroupUserDTO struct {
 	GroupID uint64
 	UserID  uint64
 }
+
+type KickMemberDTO struct {
+	GroupID  uint64
+	UserID   uint64
+	MemberID uint64
+}

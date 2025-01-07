@@ -28,3 +28,11 @@ type GroupDTO struct {
 	Description string `json:"description" db:"description"`
 	Code        string `json:"code" db:"code"`
 }
+
+type CreateProductDTO struct {
+	UserID        uint64
+	GroupID       uint64
+	ProductNameID uint64
+	Quantity      int
+	AddedBy       uint64
+}

@@ -18,4 +18,6 @@ var (
 	ErrAreNotOwner        = errors.New("you aren't owner")
 	ErrOwnerCannotLeave   = errors.New("owner cannot leave")
 	ErrCannotKickYourself = errors.New("you can not kick yourself")
+
+	ErrProductNotFound = errors.New("product not found")
 )

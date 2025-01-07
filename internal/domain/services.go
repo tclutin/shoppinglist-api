@@ -21,8 +21,8 @@ type Services struct {
 func NewServices(logger *slog.Logger, cfg *config.Config, tokenManager manager.Manager, repos *repository.Repository) *Services {
 	userService := user.NewService(logger, repos.User)
 	authService := auth.NewService(logger, cfg, userService, tokenManager, repos.Session)
-	groupService := group.NewService(repos.Group, repos.Member, logger)
 	productService := product.NewService(repos.Product, logger)
+	groupService := group.NewService(repos.Group, repos.Member, productService, logger)
 
 	return &Services{
 		Auth:    authService,

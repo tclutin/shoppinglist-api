@@ -22,6 +22,7 @@ type Service interface {
 	LeaveFromGroup(ctx context.Context, dto group.GroupUserDTO) error
 	GetGroupMembers(ctx context.Context, dto group.GroupUserDTO) ([]member.MemberDTO, error)
 	KickMember(ctx context.Context, dto group.KickMemberDTO) error
+	AddProduct(ctx context.Context, dto group.CreateProductDTO) (uint64, error)
 }
 
 type Handler struct {
@@ -45,6 +46,9 @@ func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 		groupsRouter.DELETE("/:group_id/leave", h.LeaveFromGroup)
 		groupsRouter.GET("/:group_id/members", h.GetGroupMembers)
 		groupsRouter.DELETE("/:group_id/members/:member_id", h.KickMember)
+
+		groupsRouter.POST("/:group_id/products", h.AddProduct)
+		groupsRouter.DELETE("/:group_id/products", nil)
 	}
 }
 
@@ -420,4 +424,79 @@ func (h *Handler) KickMember(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.APIResponse{Message: "success"})
+}
+
+// @Security		ApiKeyAuth
+// @Summary		AddProduct
+// @Description	Add product to group
+// @Tags			groups
+// @Accept			json
+// @Produce		json
+// @Param			group_id	path		string	true	"Group ID"
+// @Param			input	body		CreateProductRequest	true	"add new product to group"
+// @Success		200		{object}	ProductResponse
+// @Failure		401		{object}	response.APIError
+// @Failure		422		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/groups/{group_id}/products [post]
+func (h *Handler) AddProduct(c *gin.Context) {
+	userID, ok := c.Get("userID")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			response.NewAPIError(http.StatusUnauthorized, domainErr.ErrMissingCredentials.Error(), nil))
+		return
+	}
+
+	groupID, err := strconv.ParseUint(c.Param("group_id"), 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, "':group_id' is not correct", nil))
+		return
+	}
+
+	var request CreateProductRequest
+
+	if err = c.ShouldBindJSON(&request); err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, err.Error(), nil))
+		return
+	}
+
+	productID, err := h.service.AddProduct(c.Request.Context(), group.CreateProductDTO{
+		UserID:        userID.(uint64),
+		GroupID:       groupID,
+		ProductNameID: request.ProductNameID,
+		Quantity:      request.Quantity,
+	})
+
+	if err != nil {
+		if errors.Is(err, domainErr.ErrGroupNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrMemberNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrProductNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, ProductResponse{ProductID: productID})
 }

@@ -8,3 +8,8 @@ type CreateGroupRequest struct {
 type JoinToGroupRequest struct {
 	Code string `json:"code" binding:"required"`
 }
+
+type CreateProductRequest struct {
+	ProductNameID uint64 `json:"product_name_id" binding:"required"`
+	Quantity      int    `json:"quantity" binding:"required,min=1,max=1000"`
+}

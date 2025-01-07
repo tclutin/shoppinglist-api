@@ -6,10 +6,16 @@ import (
 	"github.com/jackc/pgx/v5"
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/member"
+	"github.com/tclutin/shoppinglist-api/internal/domain/product"
 	"github.com/tclutin/shoppinglist-api/pkg/hash"
 	"log/slog"
 	"time"
 )
+
+type ProductService interface {
+	Create(ctx context.Context, product product.Product) (uint64, error)
+	GetByProductNameId(ctx context.Context, productNameID uint64) (product.ProductName, error)
+}
 
 type MemberRepository interface {
 	Create(ctx context.Context, member member.Member) (uint64, error)
@@ -28,16 +34,18 @@ type Repository interface {
 }
 
 type Service struct {
-	logger     *slog.Logger
-	repo       Repository
-	memberRepo MemberRepository
+	logger         *slog.Logger
+	productService ProductService
+	repo           Repository
+	memberRepo     MemberRepository
 }
 
-func NewService(repo Repository, memberRepo MemberRepository, logger *slog.Logger) *Service {
+func NewService(repo Repository, memberRepo MemberRepository, productService ProductService, logger *slog.Logger) *Service {
 	return &Service{
-		logger:     logger.With("service", "group_service"),
-		repo:       repo,
-		memberRepo: memberRepo,
+		logger:         logger.With("service", "group_service"),
+		productService: productService,
+		repo:           repo,
+		memberRepo:     memberRepo,
 	}
 }
 
@@ -202,6 +210,40 @@ func (s *Service) KickMember(ctx context.Context, dto KickMemberDTO) error {
 	}
 
 	return s.memberRepo.Delete(ctx, membr.MemberID)
+}
+
+func (s *Service) AddProduct(ctx context.Context, dto CreateProductDTO) (uint64, error) {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, domainErr.ErrGroupNotFound
+		}
+	}
+
+	membr, err := s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, domainErr.ErrMemberNotFound
+		}
+	}
+
+	productName, err := s.productService.GetByProductNameId(ctx, dto.ProductNameID)
+	if err != nil {
+		return 0, err
+	}
+
+	product := product.Product{
+		GroupID:       group.GroupID,
+		ProductNameID: productName.ProductNameID,
+		Price:         nil,
+		Status:        "open",
+		Quantity:      dto.Quantity,
+		AddedBy:       membr.UserID,
+		BoughtBy:      nil,
+		CreatedAt:     time.Now().UTC(),
+	}
+
+	return s.productService.Create(ctx, product)
 }
 
 func (s *Service) GenCode(size int64) (string, error) {

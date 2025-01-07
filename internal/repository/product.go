@@ -16,7 +16,53 @@ func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
 }
 
 func (p *ProductRepository) Create(ctx context.Context, product product.Product) (uint64, error) {
+	sql := `INSERT INTO public.products (group_id, product_name_id, price, status, quantity, added_by, bought_by, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING product_id`
+
+	row := p.db.QueryRow(ctx, sql,
+		product.GroupID,
+		product.ProductNameID,
+		product.Price,
+		product.Status,
+		product.Quantity,
+		product.AddedBy,
+		product.BoughtBy,
+		product.CreatedAt)
+
+	var productID uint64
+	if err := row.Scan(&productID); err != nil {
+		return 0, err
+	}
+
+	return productID, nil
+}
+
+func (p *ProductRepository) Update(ctx context.Context, product product.Product) error {
 	panic("implement me")
+}
+
+func (p *ProductRepository) Delete(ctx context.Context, productID uint64) error {
+	sql := `DELETE FROM public.products WHERE product_id = $1`
+
+	_, err := p.db.Exec(ctx, sql, productID)
+
+	return err
+}
+
+func (p *ProductRepository) GetByProductNameId(ctx context.Context, productNameID uint64) (product.ProductName, error) {
+	sql := `SELECT * FROM public.product_names WHERE product_name_id = $1`
+
+	row := p.db.QueryRow(ctx, sql, productNameID)
+
+	var productName product.ProductName
+	err := row.Scan(&productName.ProductNameID, &productName.CategoryID, &productName.Name)
+
+	if err != nil {
+		return product.ProductName{}, err
+	}
+
+	return productName, nil
 }
 
 func (p *ProductRepository) GetCategories(ctx context.Context) ([]product.Category, error) {

@@ -44,7 +44,6 @@ func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 		groupsRouter.POST("/join", h.JoinToGroup)
 		groupsRouter.DELETE("/:group_id/leave", h.LeaveFromGroup)
 		groupsRouter.GET("/:group_id/members", h.GetGroupMembers)
-
 		groupsRouter.DELETE("/:group_id/members/:member_id", h.KickMember)
 	}
 }

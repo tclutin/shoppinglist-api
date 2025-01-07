@@ -7,6 +7,7 @@ type Repository struct {
 	Session *SessionRepository
 	Group   *GroupRepository
 	Member  *MemberRepository
+	Product *ProductRepository
 }
 
 func NewRepositories(pool *pgxpool.Pool) *Repository {
@@ -15,5 +16,6 @@ func NewRepositories(pool *pgxpool.Pool) *Repository {
 		Session: NewSessionRepository(pool),
 		Group:   NewGroupRepository(pool),
 		Member:  NewMemberRepository(pool),
+		Product: NewProductRepository(pool),
 	}
 }

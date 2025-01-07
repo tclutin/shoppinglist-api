@@ -10,6 +10,7 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/handler/auth"
 	"github.com/tclutin/shoppinglist-api/internal/handler/group"
 	"github.com/tclutin/shoppinglist-api/internal/handler/middleware"
+	"github.com/tclutin/shoppinglist-api/internal/handler/product"
 	"github.com/tclutin/shoppinglist-api/internal/handler/user"
 	"log/slog"
 	"net/http"
@@ -39,6 +40,7 @@ func NewRouter(cfg *config.Config, logger *slog.Logger, services *domain.Service
 		auth.NewAuthHandler(logger, services.Auth).Init(root, services.Auth)
 		user.NewGroupHandler(logger, services.User).Init(root, services.Auth)
 		group.NewGroupHandler(logger, services.Group).Init(root, services.Auth)
+		product.NewGroupHandler(logger, services.Product).Init(root, services.Auth)
 	}
 
 	return router

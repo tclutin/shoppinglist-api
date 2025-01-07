@@ -3,8 +3,15 @@ package product
 import "time"
 
 type Product struct {
-	ProductID uint64
-	CreatedAt time.Time
+	ProductID     uint64
+	GroupID       uint64
+	ProductNameID uint64
+	Price         *float64
+	Status        string
+	Quantity      int
+	AddedBy       uint64
+	BoughtBy      *uint64
+	CreatedAt     time.Time
 }
 
 type Category struct {

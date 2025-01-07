@@ -49,6 +49,22 @@ CREATE TABLE IF NOT EXISTS public.product_names (
     FOREIGN KEY (category_id) REFERENCES public.categories (category_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS public.products (
+    product_id BIGSERIAL PRIMARY KEY,
+    group_id BIGINT NOT NULL,
+    product_name_id BIGINT NOT NULL,
+    price decimal,
+    status TEXT NOT NULL CHECK (status IN ('open', 'closed')) DEFAULT 'open',
+    quantity INT NOT NULL DEFAULT 0,
+    added_by BIGINT NOT NULL,
+    bought_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    FOREIGN KEY (group_id) REFERENCES public.groups(group_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_name_id) REFERENCES public.product_names(product_name_id) ON DELETE CASCADE,
+    FOREIGN KEY (added_by) REFERENCES public.users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (bought_by) REFERENCES public.users(user_id) ON DELETE CASCADE
+);
+
 INSERT INTO public.categories (name)
 VALUES
     ('молочные продукты'),
@@ -298,6 +314,7 @@ VALUES
 -- +goose StatementBegin
 SELECT 'down SQL query';
 -- +goose StatementEnd
+DROP TABLE IF EXISTS public.products;
 DROP TABLE IF EXISTS public.product_names;
 DROP TABLE IF EXISTS public.categories;
 DROP TABLE IF EXISTS public.members;

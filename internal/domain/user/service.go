@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
+	"github.com/tclutin/shoppinglist-api/internal/domain/group"
 	"log/slog"
 )
 
@@ -13,6 +14,7 @@ type Repository interface {
 	Create(ctx context.Context, user User) (uint64, error)
 	GetById(ctx context.Context, userID uint64) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)
+	GetGroupsByUserId(ctx context.Context, userId uint64) ([]group.GroupDTO, error)
 }
 
 type Service struct {
@@ -34,6 +36,10 @@ func (s *Service) Create(ctx context.Context, user User) (uint64, error) {
 	}
 
 	return userID, nil
+}
+
+func (s *Service) GetGroupsByUserId(ctx context.Context, userId uint64) ([]group.GroupDTO, error) {
+	return s.repo.GetGroupsByUserId(ctx, userId)
 }
 
 func (s *Service) GetById(ctx context.Context, userID uint64) (User, error) {

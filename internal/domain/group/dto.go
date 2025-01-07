@@ -21,3 +21,10 @@ type KickMemberDTO struct {
 	UserID   uint64
 	MemberID uint64
 }
+
+type GroupDTO struct {
+	GroupID     uint64 `json:"groupID" db:"group_id"`
+	Name        string `json:"name" db:"name"`
+	Description string `json:"description" db:"description"`
+	Code        string `json:"code" db:"code"`
+}

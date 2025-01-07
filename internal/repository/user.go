@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tclutin/shoppinglist-api/internal/domain/group"
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
 )
 
@@ -73,4 +75,22 @@ func (u *UserRepository) GetByUsername(ctx context.Context, username string) (us
 	}
 
 	return usr, nil
+}
+
+func (u *UserRepository) GetGroupsByUserId(ctx context.Context, userId uint64) ([]group.GroupDTO, error) {
+	sql := `SELECT g.group_id, g.name, g.description, g.code FROM public.members as m
+			INNER JOIN public.groups as g ON g.group_id = m.group_id
+			WHERE m.user_id = $1`
+
+	rows, err := u.db.Query(ctx, sql, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := pgx.CollectRows(rows, pgx.RowToStructByName[group.GroupDTO])
+	if err != nil {
+		return nil, err
+	}
+
+	return groups, nil
 }

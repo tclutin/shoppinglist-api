@@ -15,6 +15,8 @@ import (
 type ProductService interface {
 	Create(ctx context.Context, product product.Product) (uint64, error)
 	GetByProductNameId(ctx context.Context, productNameID uint64) (product.ProductName, error)
+	RemoveProduct(ctx context.Context, productID uint64) error
+	GetById(ctx context.Context, productID uint64) (product.Product, error)
 }
 
 type MemberRepository interface {
@@ -212,6 +214,7 @@ func (s *Service) KickMember(ctx context.Context, dto KickMemberDTO) error {
 	return s.memberRepo.Delete(ctx, membr.MemberID)
 }
 
+// TODO: needs to refactor
 func (s *Service) AddProduct(ctx context.Context, dto CreateProductDTO) (uint64, error) {
 	group, err := s.repo.GetById(ctx, dto.GroupID)
 	if err != nil {
@@ -244,6 +247,29 @@ func (s *Service) AddProduct(ctx context.Context, dto CreateProductDTO) (uint64,
 	}
 
 	return s.productService.Create(ctx, product)
+}
+
+func (s *Service) RemoveProduct(ctx context.Context, dto RemoveProductDTO) error {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrGroupNotFound
+		}
+	}
+
+	_, err = s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrMemberNotFound
+		}
+	}
+
+	product, err := s.productService.GetById(ctx, dto.ProductID)
+	if err != nil {
+		return err
+	}
+
+	return s.productService.RemoveProduct(ctx, product.ProductID)
 }
 
 func (s *Service) GenCode(size int64) (string, error) {

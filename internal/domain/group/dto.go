@@ -36,3 +36,9 @@ type CreateProductDTO struct {
 	Quantity      int
 	AddedBy       uint64
 }
+
+type RemoveProductDTO struct {
+	ProductID uint64
+	GroupID   uint64
+	UserID    uint64
+}

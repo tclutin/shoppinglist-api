@@ -50,6 +50,30 @@ func (p *ProductRepository) Delete(ctx context.Context, productID uint64) error 
 	return err
 }
 
+func (p *ProductRepository) GetById(ctx context.Context, productID uint64) (product.Product, error) {
+	sql := `SELECT * FROM public.products WHERE product_id = $1`
+
+	row := p.db.QueryRow(ctx, sql, productID)
+
+	var product product.Product
+	err := row.Scan(
+		&product.ProductID,
+		&product.GroupID,
+		&product.ProductNameID,
+		&product.Price,
+		&product.Status,
+		&product.Quantity,
+		&product.AddedBy,
+		&product.BoughtBy,
+		&product.CreatedAt)
+
+	if err != nil {
+		return product, err
+	}
+
+	return product, nil
+}
+
 func (p *ProductRepository) GetByProductNameId(ctx context.Context, productNameID uint64) (product.ProductName, error) {
 	sql := `SELECT * FROM public.product_names WHERE product_name_id = $1`
 

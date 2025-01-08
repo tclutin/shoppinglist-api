@@ -23,7 +23,7 @@ import (
 
 type App struct {
 	httpServer *http.Server
-	logger     *slog.Logger
+	logger     logger.Logger
 	pool       *pgxpool.Pool
 }
 
@@ -46,7 +46,7 @@ func New() *App {
 
 	repos := repository.NewRepositories(pool)
 
-	services := domain.NewServices(customLogger, cfg, tokenManager, repos)
+	services := domain.NewServices(cfg, tokenManager, repos)
 
 	router := handler.NewRouter(cfg, customLogger, services)
 

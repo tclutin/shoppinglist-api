@@ -15,6 +15,7 @@ type Repository interface {
 	Delete(ctx context.Context, productID uint64) error
 	GetById(ctx context.Context, productID uint64) (Product, error)
 	GetCategories(ctx context.Context) ([]Category, error)
+	GetGroupProducts(ctx context.Context, groupID uint64) ([]ProductDTO, error)
 	GetProductsByCategoryId(ctx context.Context, categoryID uint64) ([]ProductName, error)
 	GetByProductNameId(ctx context.Context, productNameID uint64) (ProductName, error)
 }
@@ -76,6 +77,10 @@ func (s *Service) GetByProductNameId(ctx context.Context, productNameID uint64) 
 	}
 
 	return productName, nil
+}
+
+func (s *Service) GetGroupProducts(ctx context.Context, groupID uint64) ([]ProductDTO, error) {
+	return s.repo.GetGroupProducts(ctx, groupID)
 }
 
 func (s *Service) GetCategories(ctx context.Context) ([]Category, error) {

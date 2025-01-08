@@ -8,6 +8,7 @@ import (
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/group"
 	"github.com/tclutin/shoppinglist-api/internal/domain/member"
+	"github.com/tclutin/shoppinglist-api/internal/domain/product"
 	mw "github.com/tclutin/shoppinglist-api/internal/handler/middleware"
 	"github.com/tclutin/shoppinglist-api/pkg/response"
 	"log/slog"
@@ -26,6 +27,7 @@ type Service interface {
 	AddProduct(ctx context.Context, dto group.CreateProductDTO) (uint64, error)
 	RemoveProduct(ctx context.Context, dto group.RemoveProductDTO) error
 	UpdateProduct(ctx context.Context, dto group.UpdateProductDTO) error
+	GetGroupProducts(ctx context.Context, dto group.GroupUserDTO) ([]product.ProductDTO, error)
 }
 
 type Handler struct {
@@ -53,6 +55,7 @@ func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 		groupsRouter.POST("/:group_id/products", h.AddProduct)
 		groupsRouter.DELETE("/:group_id/products/:product_id", h.RemoveProduct)
 		groupsRouter.PATCH("/:group_id/products/:product_id", h.UpdateProduct)
+		groupsRouter.GET("/:group_id/products", h.GetGroupProducts)
 	}
 }
 
@@ -655,8 +658,6 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 			return
 		}
 
-		//TODO:
-		slog.Error("йцу", err)
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -664,4 +665,62 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.APIResponse{Message: "success"})
+}
+
+// @Security		ApiKeyAuth
+// @Summary		GetGroupProducts
+// @Description	get products of group
+// @Tags			groups
+// @Accept			json
+// @Produce		json
+// @Param			group_id	path		string	true	"Group ID"
+// @Success		200		{object}	product.ProductDTO
+// @Failure		401		{object}	response.APIError
+// @Failure		422		{object}	response.APIError
+// @Failure		404		{object}	response.APIError
+// @Failure		500		{object}	response.APIError
+// @Router			/groups/{group_id}/products [GET]
+func (h *Handler) GetGroupProducts(c *gin.Context) {
+	userID, ok := c.Get("userID")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			response.NewAPIError(http.StatusUnauthorized, domainErr.ErrMissingCredentials.Error(), nil))
+		return
+	}
+
+	groupID, err := strconv.ParseUint(c.Param("group_id"), 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnprocessableEntity,
+			response.NewAPIError(http.StatusUnprocessableEntity, "':group_id' is not correct", nil))
+		return
+	}
+
+	products, err := h.service.GetGroupProducts(c.Request.Context(), group.GroupUserDTO{
+		GroupID: groupID,
+		UserID:  userID.(uint64),
+	})
+
+	if err != nil {
+		if errors.Is(err, domainErr.ErrGroupNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		if errors.Is(err, domainErr.ErrMemberNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound,
+				response.NewAPIError(http.StatusNotFound, err.Error(), nil))
+			return
+		}
+
+		slog.Any("we", err)
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
 }

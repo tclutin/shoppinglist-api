@@ -8,7 +8,6 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/domain/member"
 	"github.com/tclutin/shoppinglist-api/internal/domain/product"
 	"github.com/tclutin/shoppinglist-api/pkg/hash"
-	"log/slog"
 	"time"
 )
 
@@ -38,15 +37,13 @@ type Repository interface {
 }
 
 type Service struct {
-	logger         *slog.Logger
 	productService ProductService
 	repo           Repository
 	memberRepo     MemberRepository
 }
 
-func NewService(repo Repository, memberRepo MemberRepository, productService ProductService, logger *slog.Logger) *Service {
+func NewService(repo Repository, memberRepo MemberRepository, productService ProductService) *Service {
 	return &Service{
-		logger:         logger.With("service", "group_service"),
 		productService: productService,
 		repo:           repo,
 		memberRepo:     memberRepo,

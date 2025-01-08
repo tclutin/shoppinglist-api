@@ -12,11 +12,11 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/handler/middleware"
 	"github.com/tclutin/shoppinglist-api/internal/handler/product"
 	"github.com/tclutin/shoppinglist-api/internal/handler/user"
-	"log/slog"
+	"github.com/tclutin/shoppinglist-api/pkg/logger"
 	"net/http"
 )
 
-func NewRouter(cfg *config.Config, logger *slog.Logger, services *domain.Services) *gin.Engine {
+func NewRouter(cfg *config.Config, logger logger.Logger, services *domain.Services) *gin.Engine {
 	if cfg.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
 	}

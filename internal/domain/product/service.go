@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
-	"log/slog"
 )
 
 type Repository interface {
@@ -21,14 +20,12 @@ type Repository interface {
 }
 
 type Service struct {
-	logger *slog.Logger
-	repo   Repository
+	repo Repository
 }
 
-func NewService(repo Repository, logger *slog.Logger) *Service {
+func NewService(repo Repository) *Service {
 	return &Service{
-		logger: logger.With("service", "product_service"),
-		repo:   repo,
+		repo: repo,
 	}
 }
 

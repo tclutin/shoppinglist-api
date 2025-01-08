@@ -10,6 +10,7 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/domain/member"
 	"github.com/tclutin/shoppinglist-api/internal/domain/product"
 	mw "github.com/tclutin/shoppinglist-api/internal/handler/middleware"
+	"github.com/tclutin/shoppinglist-api/pkg/logger"
 	"github.com/tclutin/shoppinglist-api/pkg/response"
 	"log/slog"
 	"net/http"
@@ -31,13 +32,13 @@ type Service interface {
 }
 
 type Handler struct {
-	logger  *slog.Logger
+	logger  logger.Logger
 	service Service
 }
 
-func NewGroupHandler(logger *slog.Logger, service Service) *Handler {
+func NewGroupHandler(logger logger.Logger, service Service) *Handler {
 	return &Handler{
-		logger:  logger.With("handler", "authHandler"),
+		logger:  logger.With("handler", "group_handler"),
 		service: service,
 	}
 }
@@ -96,6 +97,7 @@ func (h *Handler) Create(c *gin.Context) {
 	})
 
 	if err != nil {
+		h.logger.Error("error occurred while processing CreateGroup", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -157,6 +159,7 @@ func (h *Handler) JoinToGroup(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing JoinToGroup", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -221,6 +224,7 @@ func (h *Handler) Delete(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing DeleteGroup", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -285,6 +289,7 @@ func (h *Handler) LeaveFromGroup(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing LeaveFromGroup", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -343,6 +348,7 @@ func (h *Handler) GetGroupMembers(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing GetGroupMembers", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -424,6 +430,7 @@ func (h *Handler) KickMember(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing KickMember", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -499,6 +506,7 @@ func (h *Handler) AddProduct(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing AddProduct", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -572,6 +580,7 @@ func (h *Handler) RemoveProduct(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing RemoveProduct", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -658,6 +667,7 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing UpdateProduct", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -715,7 +725,7 @@ func (h *Handler) GetGroupProducts(c *gin.Context) {
 			return
 		}
 
-		slog.Any("we", err)
+		h.logger.Error("error occurred while processing GetGroupProducts", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))

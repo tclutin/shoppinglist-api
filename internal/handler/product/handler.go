@@ -2,11 +2,11 @@ package product
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/tclutin/shoppinglist-api/internal/domain/auth"
 	"github.com/tclutin/shoppinglist-api/internal/domain/product"
 	mw "github.com/tclutin/shoppinglist-api/internal/handler/middleware"
+	"github.com/tclutin/shoppinglist-api/pkg/logger"
 	"github.com/tclutin/shoppinglist-api/pkg/response"
 	"log/slog"
 	"net/http"
@@ -19,13 +19,13 @@ type Service interface {
 }
 
 type Handler struct {
-	logger  *slog.Logger
+	logger  logger.Logger
 	service Service
 }
 
-func NewGroupHandler(logger *slog.Logger, service Service) *Handler {
+func NewGroupHandler(logger logger.Logger, service Service) *Handler {
 	return &Handler{
-		logger:  logger.With("handler", "productHandler"),
+		logger:  logger.With("handler", "product_handler"),
 		service: service,
 	}
 }
@@ -51,6 +51,7 @@ func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 func (h *Handler) GetCategories(c *gin.Context) {
 	categories, err := h.service.GetCategories(c.Request.Context())
 	if err != nil {
+		h.logger.Error("error occurred while processing GetCategories", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -83,7 +84,7 @@ func (h *Handler) GetProductsByCategoryId(c *gin.Context) {
 
 	products, err := h.service.GetProductsByCategoryId(c.Request.Context(), categoryID)
 	if err != nil {
-		fmt.Println(err)
+		h.logger.Error("error occurred while processing GetProductsByCategoryId", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))

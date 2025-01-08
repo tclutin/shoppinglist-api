@@ -7,6 +7,7 @@ import (
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/group"
 	mw "github.com/tclutin/shoppinglist-api/internal/handler/middleware"
+	"github.com/tclutin/shoppinglist-api/pkg/logger"
 	"github.com/tclutin/shoppinglist-api/pkg/response"
 	"log/slog"
 	"net/http"
@@ -17,13 +18,13 @@ type Service interface {
 }
 
 type Handler struct {
-	logger  *slog.Logger
+	logger  logger.Logger
 	service Service
 }
 
-func NewGroupHandler(logger *slog.Logger, service Service) *Handler {
+func NewGroupHandler(logger logger.Logger, service Service) *Handler {
 	return &Handler{
-		logger:  logger.With("handler", "userHandler"),
+		logger:  logger.With("handler", "user_handler"),
 		service: service,
 	}
 }
@@ -56,6 +57,7 @@ func (h *Handler) GetUserGroups(c *gin.Context) {
 
 	groups, err := h.service.GetGroupsByUserId(c.Request.Context(), userID.(uint64))
 	if err != nil {
+		h.logger.Error("error occurred while processing GetGroupsByUserId", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))

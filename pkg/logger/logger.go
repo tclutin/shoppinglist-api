@@ -5,7 +5,19 @@ import (
 	"os"
 )
 
-func New(isProd bool) *slog.Logger {
+type Logger interface {
+	Info(msg string, args ...any)
+	Error(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Debug(msg string, args ...any)
+	With(args ...any) Logger
+}
+
+type SLogger struct {
+	logger *slog.Logger
+}
+
+func New(isProd bool) Logger {
 	var logger *slog.Logger
 
 	if isProd {
@@ -23,5 +35,24 @@ func New(isProd bool) *slog.Logger {
 		logger = slog.New(slog.NewTextHandler(os.Stdout, optsDev))
 	}
 
-	return logger
+	return &SLogger{logger: logger}
+}
+func (l *SLogger) Info(msg string, args ...any) {
+	l.logger.Info(msg, args...)
+}
+
+func (l *SLogger) Error(msg string, args ...any) {
+	l.logger.Error(msg, args...)
+}
+
+func (l *SLogger) Warn(msg string, args ...any) {
+	l.logger.Warn(msg, args...)
+}
+
+func (l *SLogger) Debug(msg string, args ...any) {
+	l.logger.Debug(msg, args...)
+}
+
+func (l *SLogger) With(args ...any) Logger {
+	return &SLogger{logger: l.logger.With(args...)}
 }

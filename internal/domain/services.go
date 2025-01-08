@@ -8,7 +8,6 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
 	"github.com/tclutin/shoppinglist-api/internal/repository"
 	"github.com/tclutin/shoppinglist-api/pkg/jwt/manager"
-	"log/slog"
 )
 
 type Services struct {
@@ -18,11 +17,11 @@ type Services struct {
 	Product *product.Service
 }
 
-func NewServices(logger *slog.Logger, cfg *config.Config, tokenManager manager.Manager, repos *repository.Repository) *Services {
-	userService := user.NewService(logger, repos.User)
-	authService := auth.NewService(logger, cfg, userService, tokenManager, repos.Session)
-	productService := product.NewService(repos.Product, logger)
-	groupService := group.NewService(repos.Group, repos.Member, productService, logger)
+func NewServices(cfg *config.Config, tokenManager manager.Manager, repos *repository.Repository) *Services {
+	userService := user.NewService(repos.User)
+	authService := auth.NewService(cfg, userService, tokenManager, repos.Session)
+	productService := product.NewService(repos.Product)
+	groupService := group.NewService(repos.Group, repos.Member, productService)
 
 	return &Services{
 		Auth:    authService,

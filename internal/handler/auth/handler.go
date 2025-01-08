@@ -9,6 +9,7 @@ import (
 	domainErr "github.com/tclutin/shoppinglist-api/internal/domain/errors"
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
 	mw "github.com/tclutin/shoppinglist-api/internal/handler/middleware"
+	"github.com/tclutin/shoppinglist-api/pkg/logger"
 	"github.com/tclutin/shoppinglist-api/pkg/response"
 	"log/slog"
 	"net/http"
@@ -22,24 +23,24 @@ type Service interface {
 }
 
 type Handler struct {
-	logger  *slog.Logger
+	logger  logger.Logger
 	service Service
 }
 
-func NewAuthHandler(logger *slog.Logger, service Service) *Handler {
+func NewAuthHandler(logger logger.Logger, service Service) *Handler {
 	return &Handler{
-		logger:  logger.With("authHandler"),
+		logger:  logger.With("handler", "auth_handler"),
 		service: service,
 	}
 }
 
-func (a *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
+func (h *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 	authRouter := router.Group("auth")
 	{
-		authRouter.POST("/signup", a.SignUp)
-		authRouter.POST("/login", a.LogIn)
-		authRouter.POST("/refresh", a.Refresh)
-		authRouter.GET("/who", mw.AuthMiddleware(authService), a.Who)
+		authRouter.POST("/signup", h.SignUp)
+		authRouter.POST("/login", h.LogIn)
+		authRouter.POST("/refresh", h.Refresh)
+		authRouter.GET("/who", mw.AuthMiddleware(authService), h.Who)
 	}
 }
 
@@ -54,7 +55,7 @@ func (a *Handler) Init(router *gin.RouterGroup, authService *auth.Service) {
 // @Failure		409		{object}	response.APIError
 // @Failure		500		{object}	response.APIError
 // @Router			/auth/signup [post]
-func (a *Handler) SignUp(c *gin.Context) {
+func (h *Handler) SignUp(c *gin.Context) {
 	var request SignUpRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -64,7 +65,7 @@ func (a *Handler) SignUp(c *gin.Context) {
 		return
 	}
 
-	tokens, err := a.service.SignUp(c.Request.Context(), auth.SignUpDTO{
+	tokens, err := h.service.SignUp(c.Request.Context(), auth.SignUpDTO{
 		Username: request.Username,
 		Password: request.Password,
 		Gender:   request.Gender,
@@ -78,6 +79,7 @@ func (a *Handler) SignUp(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing SignUp", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -102,7 +104,7 @@ func (a *Handler) SignUp(c *gin.Context) {
 // @Failure		404		{object}	response.APIError
 // @Failure		500		{object}	response.APIError
 // @Router			/auth/login [post]
-func (a *Handler) LogIn(c *gin.Context) {
+func (h *Handler) LogIn(c *gin.Context) {
 	var request LogInRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -112,7 +114,7 @@ func (a *Handler) LogIn(c *gin.Context) {
 		return
 	}
 
-	tokens, err := a.service.LogIn(c.Request.Context(), auth.LogInDTO{
+	tokens, err := h.service.LogIn(c.Request.Context(), auth.LogInDTO{
 		Username: request.Username,
 		Password: request.Password,
 	})
@@ -130,6 +132,7 @@ func (a *Handler) LogIn(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing LogIn", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -154,7 +157,7 @@ func (a *Handler) LogIn(c *gin.Context) {
 // @Failure		404		{object}	response.APIError
 // @Failure		500		{object}	response.APIError
 // @Router			/auth/refresh [post]
-func (a *Handler) Refresh(c *gin.Context) {
+func (h *Handler) Refresh(c *gin.Context) {
 	var request RefreshTokenRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -172,7 +175,7 @@ func (a *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
-	tokens, err := a.service.Refresh(c.Request.Context(), auth.RefreshTokenDTO{
+	tokens, err := h.service.Refresh(c.Request.Context(), auth.RefreshTokenDTO{
 		RefreshToken: uuid,
 	})
 
@@ -190,6 +193,7 @@ func (a *Handler) Refresh(c *gin.Context) {
 				response.NewAPIError(http.StatusBadRequest, err.Error(), nil))
 			return
 		}
+		h.logger.Error("error occurred while processing Refresh", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))
@@ -213,7 +217,7 @@ func (a *Handler) Refresh(c *gin.Context) {
 // @Failure		404		{object}	response.APIError
 // @Failure		500		{object}	response.APIError
 // @Router			/auth/who [get]
-func (a *Handler) Who(c *gin.Context) {
+func (h *Handler) Who(c *gin.Context) {
 	userID, ok := c.Get("userID")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized,
@@ -221,7 +225,7 @@ func (a *Handler) Who(c *gin.Context) {
 		return
 	}
 
-	usr, err := a.service.Who(c.Request.Context(), userID.(uint64))
+	usr, err := h.service.Who(c.Request.Context(), userID.(uint64))
 	if err != nil {
 		if errors.Is(err, domainErr.ErrUserNotFound) {
 			c.AbortWithStatusJSON(http.StatusNotFound,
@@ -229,6 +233,7 @@ func (a *Handler) Who(c *gin.Context) {
 			return
 		}
 
+		h.logger.Error("error occurred while processing Who", slog.Any("error", err))
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			response.NewAPIError(http.StatusInternalServerError, "Internal server error", nil))

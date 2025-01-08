@@ -11,7 +11,6 @@ import (
 	"github.com/tclutin/shoppinglist-api/internal/domain/user"
 	"github.com/tclutin/shoppinglist-api/pkg/hash"
 	"github.com/tclutin/shoppinglist-api/pkg/jwt/manager"
-	"log/slog"
 	"time"
 )
 
@@ -29,15 +28,13 @@ type Repository interface {
 
 type Service struct {
 	cfg          *config.Config
-	logger       *slog.Logger
 	tokenManager manager.Manager
 	userService  UserService
 	repo         Repository
 }
 
-func NewService(logger *slog.Logger, cfg *config.Config, userService UserService, tokenManager manager.Manager, repo Repository) *Service {
+func NewService(cfg *config.Config, userService UserService, tokenManager manager.Manager, repo Repository) *Service {
 	return &Service{
-		logger:       logger.With("service", "user_service"),
 		tokenManager: tokenManager,
 		cfg:          cfg,
 		userService:  userService,

@@ -42,3 +42,12 @@ type RemoveProductDTO struct {
 	GroupID   uint64
 	UserID    uint64
 }
+
+type UpdateProductDTO struct {
+	ProductID uint64
+	GroupID   uint64
+	UserID    uint64
+	Price     *float64
+	Quantity  int
+	Status    string
+}

@@ -14,6 +14,7 @@ import (
 
 type ProductService interface {
 	Create(ctx context.Context, product product.Product) (uint64, error)
+	Update(ctx context.Context, product product.Product) error
 	GetByProductNameId(ctx context.Context, productNameID uint64) (product.ProductName, error)
 	RemoveProduct(ctx context.Context, productID uint64) error
 	GetById(ctx context.Context, productID uint64) (product.Product, error)
@@ -270,6 +271,34 @@ func (s *Service) RemoveProduct(ctx context.Context, dto RemoveProductDTO) error
 	}
 
 	return s.productService.RemoveProduct(ctx, product.ProductID)
+}
+
+func (s *Service) UpdateProduct(ctx context.Context, dto UpdateProductDTO) error {
+	group, err := s.repo.GetById(ctx, dto.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrGroupNotFound
+		}
+	}
+
+	membr, err := s.memberRepo.GetByUserAndGroupId(ctx, dto.UserID, group.GroupID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainErr.ErrMemberNotFound
+		}
+	}
+
+	product, err := s.productService.GetById(ctx, dto.ProductID)
+	if err != nil {
+		return err
+	}
+
+	product.Status = dto.Status
+	product.Quantity = dto.Quantity
+	product.Price = dto.Price
+	product.BoughtBy = &membr.UserID
+
+	return s.productService.Update(ctx, product)
 }
 
 func (s *Service) GenCode(size int64) (string, error) {

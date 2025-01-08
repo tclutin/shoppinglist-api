@@ -39,7 +39,16 @@ func (p *ProductRepository) Create(ctx context.Context, product product.Product)
 }
 
 func (p *ProductRepository) Update(ctx context.Context, product product.Product) error {
-	panic("implement me")
+	sql := `UPDATE public.products
+			SET price = $1,
+			    quantity = $2,
+			    status = $3,
+			    bought_by = $4
+			WHERE product_id = $5`
+
+	_, err := p.db.Exec(ctx, sql, product.Price, product.Quantity, product.Status, product.BoughtBy, product.ProductID)
+
+	return err
 }
 
 func (p *ProductRepository) Delete(ctx context.Context, productID uint64) error {

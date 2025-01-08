@@ -1,0 +1,798 @@
+basePath: /api/
+definitions:
+  auth.CurrentUserResponse:
+    properties:
+      created_at:
+        type: string
+      gender:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  auth.LogInRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.SignUpRequest:
+    properties:
+      gender:
+        enum:
+        - MALE
+        - FEMALE
+        - NONE
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - gender
+    - password
+    - username
+    type: object
+  auth.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_Token:
+        type: string
+    type: object
+  group.CreateGroupRequest:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  group.CreateProductRequest:
+    properties:
+      product_name_id:
+        type: integer
+      quantity:
+        maximum: 1000
+        minimum: 1
+        type: integer
+    required:
+    - product_name_id
+    - quantity
+    type: object
+  group.GroupResponse:
+    properties:
+      group_id:
+        type: integer
+    type: object
+  group.GroupUserDTO:
+    properties:
+      groupID:
+        type: integer
+      userID:
+        type: integer
+    type: object
+  group.JoinToGroupRequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
+  group.ProductResponse:
+    properties:
+      product_id:
+        type: integer
+    type: object
+  group.UpdateProductRequest:
+    properties:
+      price:
+        type: number
+      quantity:
+        maximum: 1000
+        minimum: 1
+        type: integer
+      status:
+        enum:
+        - open
+        - closed
+        type: string
+    required:
+    - price
+    - quantity
+    - status
+    type: object
+  product.Category:
+    properties:
+      category-id:
+        type: integer
+      name:
+        type: string
+    type: object
+  product.ProductName:
+    properties:
+      category_id:
+        type: integer
+      name:
+        type: string
+      product_name_id:
+        type: integer
+    type: object
+  response.APIError:
+    properties:
+      error:
+        $ref: '#/definitions/response.Error'
+    type: object
+  response.APIResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  response.Error:
+    properties:
+      body: {}
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: for pet project for my friend
+  title: ShoppingList API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Log in your account
+      parameters:
+      - description: Log in your account
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LogInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      summary: LogIn
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh your token
+      parameters:
+      - description: Refresh your token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      summary: Refresh
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create new user
+      parameters:
+      - description: Create new user
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      summary: SignUp
+      tags:
+      - auth
+  /auth/who:
+    get:
+      consumes:
+      - application/json
+      description: Get current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.CurrentUserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: Who
+      tags:
+      - auth
+  /groups:
+    post:
+      consumes:
+      - application/json
+      description: Create new group
+      parameters:
+      - description: Create new group
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/group.CreateGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/group.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create
+      tags:
+      - groups
+  /groups/{group_id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete your group
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete
+      tags:
+      - groups
+  /groups/{group_id}/leave:
+    delete:
+      consumes:
+      - application/json
+      description: leave from your group
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: LeaveFromGroup
+      tags:
+      - groups
+  /groups/{group_id}/members:
+    get:
+      consumes:
+      - application/json
+      description: get group members
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/group.GroupUserDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetGroupMembers
+      tags:
+      - groups
+  /groups/{group_id}/members/{member_id}:
+    delete:
+      consumes:
+      - application/json
+      description: kick a member
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: member ID
+        in: path
+        name: member_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: KickMember
+      tags:
+      - groups
+  /groups/{group_id}/products:
+    post:
+      consumes:
+      - application/json
+      description: Add product to group
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: add new product to group
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/group.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/group.ProductResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: AddProduct
+      tags:
+      - groups
+  /groups/{group_id}/products/{product_id}:
+    delete:
+      consumes:
+      - application/json
+      description: remove a product
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: RemoveProduct
+      tags:
+      - groups
+    patch:
+      consumes:
+      - application/json
+      description: update a product
+      parameters:
+      - description: Group ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      - description: update a product
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/group.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: UpdateProduct
+      tags:
+      - groups
+  /groups/join:
+    post:
+      consumes:
+      - application/json
+      description: join to group
+      parameters:
+      - description: join to group
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/group.JoinToGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: JoinToGroup
+      tags:
+      - groups
+  /products/{category_id}:
+    get:
+      consumes:
+      - application/json
+      description: get products by category id
+      parameters:
+      - description: category_id
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product.ProductName'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetProductsByCategory
+      tags:
+      - products
+  /products/categories:
+    get:
+      consumes:
+      - application/json
+      description: get categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product.Category'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetCategories
+      tags:
+      - products
+  /users/groups:
+    get:
+      consumes:
+      - application/json
+      description: get user groups
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/group.GroupUserDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetUserGroups
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    description: Use "Bearer <token>" to authenticate
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

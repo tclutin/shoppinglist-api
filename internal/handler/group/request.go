@@ -13,3 +13,9 @@ type CreateProductRequest struct {
 	ProductNameID uint64 `json:"product_name_id" binding:"required"`
 	Quantity      int    `json:"quantity" binding:"required,min=1,max=1000"`
 }
+
+type UpdateProductRequest struct {
+	Price    *float64 `json:"price"`
+	Quantity int      `json:"quantity" binding:"required,min=1,max=1000"`
+	Status   string   `json:"status" binding:"required,oneof=open closed"`
+}

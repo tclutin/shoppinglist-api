@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, product Product) (uint64, error)
+	Update(ctx context.Context, product Product) error
 	Delete(ctx context.Context, productID uint64) error
 	GetById(ctx context.Context, productID uint64) (Product, error)
 	GetCategories(ctx context.Context) ([]Category, error)
@@ -32,6 +33,10 @@ func NewService(repo Repository, logger *slog.Logger) *Service {
 
 func (s *Service) Create(ctx context.Context, product Product) (uint64, error) {
 	return s.repo.Create(ctx, product)
+}
+
+func (s *Service) Update(ctx context.Context, product Product) error {
+	return s.repo.Update(ctx, product)
 }
 
 func (s *Service) RemoveProduct(ctx context.Context, productID uint64) error {

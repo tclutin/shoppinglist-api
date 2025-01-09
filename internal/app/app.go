@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tclutin/shoppinglist-api/internal/config"
 	"github.com/tclutin/shoppinglist-api/internal/domain"
+	migrator "github.com/tclutin/shoppinglist-api/internal/domain/migrator"
 	"github.com/tclutin/shoppinglist-api/internal/handler"
 	"github.com/tclutin/shoppinglist-api/internal/repository"
 	"github.com/tclutin/shoppinglist-api/pkg/client/postgresql"
@@ -41,6 +42,9 @@ func New() *App {
 		cfg.Postgres.Database)
 
 	pool := postgresql.NewPool(context.Background(), dsn)
+
+	migrator := migrator.New(pool)
+	migrator.Init(context.Background())
 
 	tokenManager := manager.MustLoadTokenManager(cfg.JWT.Secret)
 

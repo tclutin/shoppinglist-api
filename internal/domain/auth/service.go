@@ -42,41 +42,6 @@ func NewService(cfg *config.Config, userService UserService, tokenManager manage
 	}
 }
 
-func (s *Service) LogIn(ctx context.Context, dto LogInDTO) (TokenDTO, error) {
-	usr, err := s.userService.GetByUsername(ctx, dto.Username)
-	if err != nil {
-		return TokenDTO{}, err
-	}
-
-	if !hash.CompareBcryptHash(usr.Password, dto.Password) {
-		return TokenDTO{}, domainErr.ErrUserNotValid
-	}
-
-	accessToken, err := s.tokenManager.NewAccessToken(usr.UserID, s.cfg.JWT.AccessExpire)
-	if err != nil {
-		return TokenDTO{}, err
-	}
-
-	refreshToken := s.tokenManager.NewRefreshToken()
-
-	session := Session{
-		UserID:       usr.UserID,
-		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().UTC().Add(s.cfg.JWT.RefreshExpire),
-		CreatedAt:    time.Now().UTC(),
-	}
-
-	_, err = s.repo.CreateSession(ctx, session)
-	if err != nil {
-		return TokenDTO{}, err
-	}
-
-	return TokenDTO{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken.String(),
-	}, nil
-}
-
 func (s *Service) SignUp(ctx context.Context, dto SignUpDTO) (TokenDTO, error) {
 	_, err := s.userService.GetByUsername(ctx, dto.Username)
 	if err == nil {
@@ -109,6 +74,41 @@ func (s *Service) SignUp(ctx context.Context, dto SignUpDTO) (TokenDTO, error) {
 
 	session := Session{
 		UserID:       userID,
+		RefreshToken: refreshToken,
+		ExpiresAt:    time.Now().UTC().Add(s.cfg.JWT.RefreshExpire),
+		CreatedAt:    time.Now().UTC(),
+	}
+
+	_, err = s.repo.CreateSession(ctx, session)
+	if err != nil {
+		return TokenDTO{}, err
+	}
+
+	return TokenDTO{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken.String(),
+	}, nil
+}
+
+func (s *Service) LogIn(ctx context.Context, dto LogInDTO) (TokenDTO, error) {
+	usr, err := s.userService.GetByUsername(ctx, dto.Username)
+	if err != nil {
+		return TokenDTO{}, err
+	}
+
+	if !hash.CompareBcryptHash(usr.Password, dto.Password) {
+		return TokenDTO{}, domainErr.ErrUserNotValid
+	}
+
+	accessToken, err := s.tokenManager.NewAccessToken(usr.UserID, s.cfg.JWT.AccessExpire)
+	if err != nil {
+		return TokenDTO{}, err
+	}
+
+	refreshToken := s.tokenManager.NewRefreshToken()
+
+	session := Session{
+		UserID:       usr.UserID,
 		RefreshToken: refreshToken,
 		ExpiresAt:    time.Now().UTC().Add(s.cfg.JWT.RefreshExpire),
 		CreatedAt:    time.Now().UTC(),

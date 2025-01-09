@@ -306,7 +306,7 @@ func (h *Handler) LeaveFromGroup(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			group_id	path		string	true	"Group ID"
-// @Success		200		{object}	group.GroupUserDTO
+// @Success		200		{object}	member.MemberDTO
 // @Failure		401		{object}	response.APIError
 // @Failure		422		{object}	response.APIError
 // @Failure		403		{object}	response.APIError

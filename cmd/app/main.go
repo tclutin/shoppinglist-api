@@ -10,7 +10,7 @@ import (
 //	@version		1.0
 //	@description	for pet project for my friend
 
-//	@host		localhost:8081
+//	@host		localhost:9090
 //	@BasePath	/api/
 
 // @securityDefinitions.apikey	ApiKeyAuth

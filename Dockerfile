@@ -7,8 +7,8 @@ COPY . .
 RUN go mod download && go mod tidy
 RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
-RUN go build -o ./ cmd/main.go
+RUN go build -o ./ cmd/app/main.go
 
-EXPOSE 8080
+EXPOSE 9090
 
 CMD ["./main"]

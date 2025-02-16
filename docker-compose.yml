@@ -10,3 +10,10 @@ services:
       - ./data:/var/lib/postgresql/data
     ports:
       - "5455:5432"
+  app:
+    restart: always
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

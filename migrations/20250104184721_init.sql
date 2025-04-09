@@ -1,7 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-SELECT 'up SQL query';
--- +goose StatementEnd
 CREATE TABLE IF NOT EXISTS public.users (
     user_id BIGSERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
@@ -310,10 +308,10 @@ VALUES
     ('кошачий корм сухой', 14),
     ('собачий корм жидкий', 14),
     ('собачий корм сухой', 14);
+-- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
-SELECT 'down SQL query';
--- +goose StatementEnd
 DROP TABLE IF EXISTS public.products;
 DROP TABLE IF EXISTS public.product_names;
 DROP TABLE IF EXISTS public.categories;
@@ -321,3 +319,4 @@ DROP TABLE IF EXISTS public.members;
 DROP TABLE IF EXISTS public.sessions;
 DROP TABLE IF EXISTS public.users;
 DROP TABLE IF EXISTS public.groups;
+-- +goose StatementEnd
